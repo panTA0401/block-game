@@ -1,0 +1,880 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>姗姗の趣味网站 - 自定义填方块游戏</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #f0fff0, #e0f7e0);
+            color: #2e7d32;
+            min-height: 100vh;
+            padding: 20px;
+            overflow-x: hidden;
+        }
+
+        /* 头部样式 */
+        header {
+            text-align: center;
+            padding: 20px 0 30px;
+            position: relative;
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            font-size: 2.8rem;
+            margin-bottom: 15px;
+            color: #2e7d32;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
+            letter-spacing: 3px;
+            position: relative;
+            display: inline-block;
+        }
+
+        h1:before, h1:after {
+            content: "✿";
+            font-size: 1.5rem;
+            margin: 0 15px;
+            position: relative;
+            top: -5px;
+        }
+
+        .subtitle {
+            font-size: 1.2rem;
+            color: #4caf50;
+            margin-top: 10px;
+        }
+
+        /* 主容器 */
+        .container {
+            display: flex;
+            max-width: 1200px;
+            margin: 0 auto;
+            gap: 30px;
+            flex-wrap: wrap;
+        }
+
+        /* 游戏区域 */
+        .game-area {
+            flex: 1;
+            min-width: 300px;
+            background-color: rgba(255, 255, 255, 0.9);
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(46, 125, 50, 0.15);
+            padding: 25px;
+            position: relative;
+            overflow: hidden;
+            border: 2px solid #c8e6c9;
+        }
+
+        .game-title {
+            text-align: center;
+            margin-bottom: 20px;
+            color: #2e7d32;
+            font-size: 1.8rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        /* 游戏网格 */
+        .grid-container {
+            display: grid;
+            grid-template-columns: repeat(10, 1fr);
+            grid-gap: 3px;
+            background-color: #e8f5e9;
+            padding: 10px;
+            border-radius: 10px;
+            margin: 0 auto;
+            max-width: 500px;
+            border: 3px solid #c8e6c9;
+            box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.05);
+        }
+
+        .grid-cell {
+            aspect-ratio: 1/1;
+            background-color: #ffffff;
+            border-radius: 4px;
+            transition: all 0.2s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .grid-cell.filled {
+            background-color: #a5d6a7;
+            box-shadow: inset 0 0 5px rgba(0, 0, 0, 0.1);
+        }
+
+        .grid-cell.obstacle {
+            background: repeating-linear-gradient(
+                45deg,
+                #9e9e9e,
+                #9e9e9e 2px,
+                #8d8d8d 2px,
+                #8d8d8d 4px
+            );
+        }
+
+        .grid-cell.active {
+            background-color: #4caf50;
+            transform: scale(0.95);
+        }
+
+        /* 控制面板 */
+        .control-panel {
+            flex: 0 0 350px;
+            background-color: rgba(255, 255, 255, 0.9);
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(46, 125, 50, 0.15);
+            padding: 25px;
+            display: flex;
+            flex-direction: column;
+            gap: 25px;
+            border: 2px solid #c8e6c9;
+        }
+
+        .panel-section {
+            background-color: #f1f8e9;
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: inset 0 0 5px rgba(0, 0, 0, 0.05);
+        }
+
+        .section-title {
+            margin-bottom: 15px;
+            color: #2e7d32;
+            font-size: 1.3rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .section-title i {
+            font-size: 1.5rem;
+        }
+
+        /* 自定义方块区域 */
+        .block-creator {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            grid-template-rows: repeat(3, 1fr);
+            grid-gap: 5px;
+            margin-bottom: 15px;
+            background-color: #e8f5e9;
+            padding: 10px;
+            border-radius: 10px;
+        }
+
+        .creator-cell {
+            aspect-ratio: 1/1;
+            background-color: #ffffff;
+            border: 2px solid #c8e6c9;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .creator-cell.selected {
+            background-color: #4caf50;
+        }
+
+        .creator-cell.selected::after {
+            content: "";
+            width: 60%;
+            height: 60%;
+            background-color: white;
+            border-radius: 50%;
+        }
+
+        /* 按钮样式 */
+        .btn {
+            background-color: #4caf50;
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 50px;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            width: 100%;
+            box-shadow: 0 4px 6px rgba(76, 175, 80, 0.2);
+        }
+
+        .btn:hover {
+            background-color: #388e3c;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 8px rgba(76, 175, 80, 0.3);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        .btn.secondary {
+            background-color: #81c784;
+        }
+
+        .btn.secondary:hover {
+            background-color: #66bb6a;
+        }
+
+        /* 分数面板 */
+        .score-panel {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 15px;
+            padding: 15px;
+            background-color: #e8f5e9;
+            border-radius: 15px;
+            box-shadow: inset 0 0 5px rgba(0, 0, 0, 0.05);
+        }
+
+        .score-value {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #2e7d32;
+        }
+
+        /* 装饰元素 */
+        .decoration {
+            position: absolute;
+            z-index: -1;
+            pointer-events: none;
+        }
+
+        .bunny {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            width: 80px;
+            height: 100px;
+            background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="40" cy="30" r="20" fill="%23f5f5f5" stroke="%23e0e0e0" stroke-width="2"/><circle cx="60" cy="30" r="20" fill="%23f5f5f5" stroke="%23e0e0e0" stroke-width="2"/><circle cx="50" cy="60" r="30" fill="%23f5f5f5" stroke="%23e0e0e0" stroke-width="2"/><circle cx="35" cy="25" r="5" fill="%23333"/><circle cx="65" cy="25" r="5" fill="%23333"/><ellipse cx="50" cy="40" rx="5" ry="3" fill="%23ff6b6b"/></svg>') no-repeat;
+            background-size: contain;
+            filter: drop-shadow(2px 2px 3px rgba(0,0,0,0.1));
+        }
+
+        .flower {
+            position: absolute;
+            width: 50px;
+            height: 50px;
+            background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="50" cy="50" r="20" fill="%23ffcdd2"/><circle cx="35" cy="35" r="10" fill="%23f8bbd0"/><circle cx="65" cy="35" r="10" fill="%23f8bbd0"/><circle cx="35" cy="65" r="10" fill="%23f8bbd0"/><circle cx="65" cy="65" r="10" fill="%23f8bbd0"/><circle cx="50" cy="50" r="5" fill="%23f48fb1"/></svg>') no-repeat;
+            background-size: contain;
+            filter: drop-shadow(2px 2px 3px rgba(0,0,0,0.1));
+        }
+
+        .flower:nth-child(1) {
+            top: 10%;
+            left: 5%;
+            transform: rotate(15deg);
+        }
+
+        .flower:nth-child(2) {
+            top: 20%;
+            right: 7%;
+            transform: rotate(-10deg);
+        }
+
+        .flower:nth-child(3) {
+            bottom: 15%;
+            left: 8%;
+            transform: rotate(25deg);
+        }
+
+        /* 游戏说明 */
+        .instructions {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: #f1f8e9;
+            border-radius: 15px;
+            font-size: 0.95rem;
+            line-height: 1.6;
+            box-shadow: inset 0 0 5px rgba(0, 0, 0, 0.05);
+        }
+
+        .instructions h3 {
+            margin-bottom: 10px;
+            color: #2e7d32;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .instructions ul {
+            padding-left: 20px;
+        }
+
+        .instructions li {
+            margin-bottom: 8px;
+            display: flex;
+            align-items: flex-start;
+            gap: 6px;
+        }
+
+        .instructions li::before {
+            content: "•";
+            color: #4caf50;
+            font-weight: bold;
+        }
+
+        /* 障碍物控制 */
+        .obstacle-controls {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .mode-toggle {
+            display: flex;
+            gap: 10px;
+            background: #e8f5e9;
+            padding: 10px;
+            border-radius: 10px;
+            margin-top: 10px;
+        }
+
+        .mode-btn {
+            flex: 1;
+            padding: 10px;
+            text-align: center;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-weight: 500;
+        }
+
+        .mode-btn.active {
+            background: #4caf50;
+            color: white;
+        }
+
+        /* 响应式设计 */
+        @media (max-width: 900px) {
+            .container {
+                flex-direction: column;
+            }
+            
+            .control-panel {
+                flex: 1;
+                min-width: auto;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- 装饰花朵 -->
+    <div class="decoration flower"></div>
+    <div class="decoration flower"></div>
+    <div class="decoration flower"></div>
+    
+    <header>
+        <h1>姗姗の趣味网站</h1>
+        <div class="subtitle">自定义填方块游戏 ✿ 消除方块赢取积分</div>
+    </header>
+    
+    <div class="container">
+        <div class="game-area">
+            <div class="game-title">
+                <i class="fas fa-gamepad"></i> 填方块游戏
+            </div>
+            <div class="grid-container" id="gameGrid">
+                <!-- 游戏网格将由JavaScript生成 -->
+            </div>
+            
+            <div class="score-panel">
+                <div>当前分数：</div>
+                <div class="score-value" id="score">0</div>
+            </div>
+            
+            <div class="instructions">
+                <h3><i class="fas fa-info-circle"></i> 游戏说明：</h3>
+                <ul>
+                    <li>灰色方块是障碍物，不能被消除</li>
+                    <li>在右侧设计您的自定义方块（3×4）</li>
+                    <li>点击网格放置您的方块</li>
+                    <li>填满一行即可消除并获得5分</li>
+                    <li>尽可能多地消除行来获得高分！</li>
+                </ul>
+            </div>
+            
+            <div class="bunny"></div>
+        </div>
+        
+        <div class="control-panel">
+            <div class="panel-section">
+                <div class="section-title">
+                    <i class="fas fa-edit"></i> 设计您的方块
+                </div>
+                <div class="block-creator" id="blockCreator">
+                    <!-- 方块设计器由JS生成 -->
+                </div>
+                <button class="btn secondary" id="rotateBtn">
+                    <i class="fas fa-sync-alt"></i> 旋转方块
+                </button>
+                <button class="btn secondary" id="clearBlockBtn">
+                    <i class="fas fa-trash-alt"></i> 清除方块
+                </button>
+            </div>
+            
+            <div class="panel-section">
+                <div class="section-title">
+                    <i class="fas fa-sliders-h"></i> 障碍物设置
+                </div>
+                <div class="mode-toggle">
+                    <div class="mode-btn active" data-mode="random">随机生成</div>
+                    <div class="mode-btn" data-mode="custom">自定义</div>
+                </div>
+                <div class="obstacle-controls">
+                    <button class="btn secondary" id="addObstaclesBtn">
+                        <i class="fas fa-plus"></i> 添加障碍
+                    </button>
+                    <button class="btn secondary" id="removeObstaclesBtn">
+                        <i class="fas fa-minus"></i> 清除障碍
+                    </button>
+                </div>
+            </div>
+            
+            <div class="panel-section">
+                <div class="section-title">
+                    <i class="fas fa-gamepad"></i> 游戏控制
+                </div>
+                <button class="btn" id="startBtn">
+                    <i class="fas fa-play"></i> 开始游戏
+                </button>
+                <button class="btn" id="resetBtn">
+                    <i class="fas fa-redo"></i> 重置游戏
+                </button>
+            </div>
+            
+            <div class="panel-section">
+                <div class="section-title">
+                    <i class="fas fa-chart-line"></i> 游戏状态
+                </div>
+                <div class="instructions">
+                    <p><i class="fas fa-flag"></i> 当前状态: <span id="gameStatus">准备中</span></p>
+                    <p><i class="fas fa-layer-group"></i> 已消除行数: <span id="linesCleared">0</span></p>
+                    <p><i class="fas fa-cubes"></i> 已放置方块: <span id="blocksPlaced">0</span></p>
+                    <p><i class="fas fa-mountain"></i> 障碍物数量: <span id="obstacleCount">0</span></p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // 游戏配置
+            const config = {
+                rows: 15,
+                cols: 10,
+                obstacleRatio: 0.2,
+                scorePerLine: 5
+            };
+            
+            // 游戏状态
+            let gameState = {
+                score: 0,
+                linesCleared: 0,
+                blocksPlaced: 0,
+                isPlaying: false,
+                grid: [],
+                currentBlock: [
+                    [1, 1, 1, 0],
+                    [0, 1, 0, 0],
+                    [0, 1, 0, 0]
+                ],
+                blockRotation: 0,
+                obstacleMode: 'random', // 'random' 或 'custom'
+                editMode: false
+            };
+            
+            // DOM 元素
+            const gameGrid = document.getElementById('gameGrid');
+            const blockCreator = document.getElementById('blockCreator');
+            const scoreElement = document.getElementById('score');
+            const gameStatusElement = document.getElementById('gameStatus');
+            const linesClearedElement = document.getElementById('linesCleared');
+            const blocksPlacedElement = document.getElementById('blocksPlaced');
+            const obstacleCountElement = document.getElementById('obstacleCount');
+            const startBtn = document.getElementById('startBtn');
+            const resetBtn = document.getElementById('resetBtn');
+            const rotateBtn = document.getElementById('rotateBtn');
+            const clearBlockBtn = document.getElementById('clearBlockBtn');
+            const addObstaclesBtn = document.getElementById('addObstaclesBtn');
+            const removeObstaclesBtn = document.getElementById('removeObstaclesBtn');
+            const modeButtons = document.querySelectorAll('.mode-btn');
+            
+            // 初始化游戏
+            function initGame() {
+                createGrid();
+                createBlockCreator();
+                updateUI();
+                
+                // 添加事件监听器
+                modeButtons.forEach(btn => {
+                    btn.addEventListener('click', () => {
+                        modeButtons.forEach(b => b.classList.remove('active'));
+                        btn.classList.add('active');
+                        gameState.obstacleMode = btn.dataset.mode;
+                        if (gameState.obstacleMode === 'random') {
+                            generateRandomObstacles();
+                        }
+                    });
+                });
+            }
+            
+            // 创建游戏网格
+            function createGrid() {
+                gameGrid.innerHTML = '';
+                gameGrid.style.gridTemplateColumns = `repeat(${config.cols}, 1fr)`;
+                
+                gameState.grid = [];
+                for (let r = 0; r < config.rows; r++) {
+                    gameState.grid[r] = [];
+                    for (let c = 0; c < config.cols; c++) {
+                        gameState.grid[r][c] = 'empty';
+                        
+                        const cell = document.createElement('div');
+                        cell.className = 'grid-cell';
+                        cell.dataset.row = r;
+                        cell.dataset.col = c;
+                        
+                        cell.addEventListener('click', () => {
+                            if (gameState.isPlaying) {
+                                placeBlock(r, c);
+                            } else if (gameState.obstacleMode === 'custom') {
+                                toggleObstacle(r, c);
+                            }
+                        });
+                        
+                        gameGrid.appendChild(cell);
+                    }
+                }
+                
+                if (gameState.obstacleMode === 'random') {
+                    generateRandomObstacles();
+                }
+            }
+            
+            // 生成随机障碍物
+            function generateRandomObstacles() {
+                for (let r = 0; r < config.rows; r++) {
+                    for (let c = 0; c < config.cols; c++) {
+                        // 随机生成障碍物（不在顶部3行）
+                        const isObstacle = Math.random() < config.obstacleRatio && r > 2;
+                        if (isObstacle) {
+                            gameState.grid[r][c] = 'obstacle';
+                            updateCell(r, c, 'obstacle');
+                        } else {
+                            gameState.grid[r][c] = 'empty';
+                            updateCell(r, c, 'empty');
+                        }
+                    }
+                }
+                updateObstacleCount();
+            }
+            
+            // 切换障碍物状态
+            function toggleObstacle(row, col) {
+                if (gameState.isPlaying) return;
+                
+                if (gameState.grid[row][col] === 'obstacle') {
+                    gameState.grid[row][col] = 'empty';
+                    updateCell(row, col, 'empty');
+                } else {
+                    gameState.grid[row][col] = 'obstacle';
+                    updateCell(row, col, 'obstacle');
+                }
+                updateObstacleCount();
+            }
+            
+            // 添加障碍物
+            function addRandomObstacles() {
+                for (let r = 0; r < config.rows; r++) {
+                    for (let c = 0; c < config.cols; c++) {
+                        // 只在空单元格添加障碍物
+                        if (gameState.grid[r][c] === 'empty' && Math.random() < 0.3) {
+                            gameState.grid[r][c] = 'obstacle';
+                            updateCell(r, c, 'obstacle');
+                        }
+                    }
+                }
+                updateObstacleCount();
+            }
+            
+            // 移除所有障碍物
+            function removeAllObstacles() {
+                for (let r = 0; r < config.rows; r++) {
+                    for (let c = 0; c < config.cols; c++) {
+                        if (gameState.grid[r][c] === 'obstacle') {
+                            gameState.grid[r][c] = 'empty';
+                            updateCell(r, c, 'empty');
+                        }
+                    }
+                }
+                updateObstacleCount();
+            }
+            
+            // 更新障碍物数量
+            function updateObstacleCount() {
+                let count = 0;
+                for (let r = 0; r < config.rows; r++) {
+                    for (let c = 0; c < config.cols; c++) {
+                        if (gameState.grid[r][c] === 'obstacle') count++;
+                    }
+                }
+                obstacleCountElement.textContent = count;
+            }
+            
+            // 创建方块设计器
+            function createBlockCreator() {
+                blockCreator.innerHTML = '';
+                
+                for (let r = 0; r < 3; r++) {
+                    for (let c = 0; c < 4; c++) {
+                        const cell = document.createElement('div');
+                        cell.className = 'creator-cell';
+                        cell.dataset.row = r;
+                        cell.dataset.col = c;
+                        
+                        // 初始状态
+                        if (gameState.currentBlock[r][c]) {
+                            cell.classList.add('selected');
+                        }
+                        
+                        cell.addEventListener('click', () => {
+                            cell.classList.toggle('selected');
+                            gameState.currentBlock[r][c] = gameState.currentBlock[r][c] ? 0 : 1;
+                        });
+                        
+                        blockCreator.appendChild(cell);
+                    }
+                }
+            }
+            
+            // 清除方块设计
+            function clearBlockDesign() {
+                gameState.currentBlock = [
+                    [0, 0, 0, 0],
+                    [0, 0, 0, 0],
+                    [0, 0, 0, 0]
+                ];
+                createBlockCreator();
+            }
+            
+            // 放置方块
+            function placeBlock(row, col) {
+                if (!gameState.isPlaying) return;
+                
+                const block = gameState.currentBlock;
+                const blockRows = block.length;
+                const blockCols = block[0].length;
+                
+                // 检查是否可以放置
+                for (let r = 0; r < blockRows; r++) {
+                    for (let c = 0; c < blockCols; c++) {
+                        if (block[r][c]) {
+                            const gridRow = row + r;
+                            const gridCol = col + c;
+                            
+                            if (gridRow >= config.rows || gridCol >= config.cols || 
+                                gameState.grid[gridRow][gridCol] !== 'empty') {
+                                return; // 无法放置
+                            }
+                        }
+                    }
+                }
+                
+                // 放置方块
+                for (let r = 0; r < blockRows; r++) {
+                    for (let c = 0; c < blockCols; c++) {
+                        if (block[r][c]) {
+                            const gridRow = row + r;
+                            const gridCol = col + c;
+                            
+                            if (gridRow < config.rows && gridCol < config.cols) {
+                                gameState.grid[gridRow][gridCol] = 'filled';
+                                updateCell(gridRow, gridCol, 'filled');
+                            }
+                        }
+                    }
+                }
+                
+                gameState.blocksPlaced++;
+                checkLines();
+                updateUI();
+            }
+            
+            // 更新单元格显示
+            function updateCell(row, col, state) {
+                const cell = document.querySelector(`.grid-cell[data-row="${row}"][data-col="${col}"]`);
+                if (cell) {
+                    cell.className = 'grid-cell';
+                    if (state === 'filled') cell.classList.add('filled');
+                    if (state === 'obstacle') cell.classList.add('obstacle');
+                }
+            }
+            
+            // 检查并清除完整的行
+            function checkLines() {
+                let linesToClear = [];
+                
+                for (let r = 0; r < config.rows; r++) {
+                    let isFull = true;
+                    
+                    for (let c = 0; c < config.cols; c++) {
+                        if (gameState.grid[r][c] === 'empty') {
+                            isFull = false;
+                            break;
+                        }
+                    }
+                    
+                    if (isFull) {
+                        linesToClear.push(r);
+                    }
+                }
+                
+                // 清除行并计分
+                if (linesToClear.length > 0) {
+                    // 分数计算
+                    gameState.score += linesToClear.length * config.scorePerLine;
+                    gameState.linesCleared += linesToClear.length;
+                    
+                    // 清除行（动画效果）
+                    animateLineClear(linesToClear, () => {
+                        // 实际清除行
+                        for (const row of linesToClear) {
+                            // 将上面的行下移
+                            for (let r = row; r > 0; r--) {
+                                for (let c = 0; c < config.cols; c++) {
+                                    gameState.grid[r][c] = gameState.grid[r-1][c];
+                                }
+                            }
+                            
+                            // 清空顶行
+                            for (let c = 0; c < config.cols; c++) {
+                                gameState.grid[0][c] = 'empty';
+                            }
+                        }
+                        
+                        // 更新网格显示
+                        updateGridDisplay();
+                    });
+                }
+            }
+            
+            // 行清除动画
+            function animateLineClear(rows, callback) {
+                rows.forEach(row => {
+                    for (let c = 0; c < config.cols; c++) {
+                        const cell = document.querySelector(`.grid-cell[data-row="${row}"][data-col="${c}"]`);
+                        if (cell) {
+                            cell.classList.add('active');
+                        }
+                    }
+                });
+                
+                setTimeout(() => {
+                    callback();
+                    setTimeout(updateGridDisplay, 100);
+                }, 300);
+            }
+            
+            // 更新网格显示
+            function updateGridDisplay() {
+                for (let r = 0; r < config.rows; r++) {
+                    for (let c = 0; c < config.cols; c++) {
+                        updateCell(r, c, gameState.grid[r][c]);
+                    }
+                }
+            }
+            
+            // 旋转方块
+            function rotateBlock() {
+                const rows = gameState.currentBlock.length;
+                const cols = gameState.currentBlock[0].length;
+                const rotated = Array(cols).fill().map(() => Array(rows).fill(0));
+                
+                for (let r = 0; r < rows; r++) {
+                    for (let c = 0; c < cols; c++) {
+                        rotated[c][rows - 1 - r] = gameState.currentBlock[r][c];
+                    }
+                }
+                
+                gameState.currentBlock = rotated;
+                createBlockCreator(); // 更新显示
+            }
+            
+            // 更新UI
+            function updateUI() {
+                scoreElement.textContent = gameState.score;
+                gameStatusElement.textContent = gameState.isPlaying ? '进行中' : '准备中';
+                linesClearedElement.textContent = gameState.linesCleared;
+                blocksPlacedElement.textContent = gameState.blocksPlaced;
+                updateObstacleCount();
+            }
+            
+            // 开始游戏
+            function startGame() {
+                gameState.isPlaying = true;
+                updateUI();
+                startBtn.innerHTML = '<i class="fas fa-play"></i> 游戏进行中';
+                startBtn.disabled = true;
+            }
+            
+            // 重置游戏
+            function resetGame() {
+                gameState = {
+                    score: 0,
+                    linesCleared: 0,
+                    blocksPlaced: 0,
+                    isPlaying: false,
+                    grid: [],
+                    currentBlock: [
+                        [1, 1, 1, 0],
+                        [0, 1, 0, 0],
+                        [0, 1, 0, 0]
+                    ],
+                    blockRotation: 0,
+                    obstacleMode: 'random'
+                };
+                
+                createGrid();
+                createBlockCreator();
+                updateUI();
+                
+                startBtn.innerHTML = '<i class="fas fa-play"></i> 开始游戏';
+                startBtn.disabled = false;
+            }
+            
+            // 事件监听
+            startBtn.addEventListener('click', startGame);
+            resetBtn.addEventListener('click', resetGame);
+            rotateBtn.addEventListener('click', rotateBlock);
+            clearBlockBtn.addEventListener('click', clearBlockDesign);
+            addObstaclesBtn.addEventListener('click', addRandomObstacles);
+            removeObstaclesBtn.addEventListener('click', removeAllObstacles);
+            
+            // 初始化游戏
+            initGame();
+        });
+    </script>
+</body>
+</html>
